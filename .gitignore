@@ -1,0 +1,8 @@
+.pyc
+venv/
+.vscode/
+downloads/
+auth.ini
+*.ini
+debugging/
+__pycache__/
