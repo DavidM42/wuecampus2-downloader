@@ -12,5 +12,7 @@
     * and create second project with flask to give all files in simple interface for me
     * and eventually auto uploader to ereader or
     * anki auto card creator
+    * fire tv adb uploader with directory structure for learning
+    * basically create unified interface to build clients to bring pdfs to all devices
 * Randomize sleep between downloading files a bit of about a few hundred ms to be more human like
 * Save cookies at __del_ of moodler class into pickle to reload on next use, try to save some logins on reruns
