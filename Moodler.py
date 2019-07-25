@@ -36,7 +36,7 @@ class CampusFile():
         self.section_title = section_title
 
 class Moodler():
-    def __init__(self):
+    def __init__(self, cookie=None):
         """
             Sets up base class variables
             Gets login info from auth.ini file
@@ -64,6 +64,11 @@ class Moodler():
             "spreadsheet",
             "jpeg"
         ]
+
+        #if cookie gets inputed set it and keep instead of logging in via auth data
+        if cookie is not None:
+            self.cookies = {"MoodleSession": cookie}
+            return
 
         #get login credentials from config and then login into moodle
         config = ConfigParser()
