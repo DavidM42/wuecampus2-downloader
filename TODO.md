@@ -1,5 +1,6 @@
 # Functionality to add
 * Get files as stream to make runnable in lambda and stream into s3 and stream into zip to serve
+* Get and save as links mp4 urls for aufzeichnungen with date as csv or something
 * Files in moodle folders like PySql in swt https://wuecampus2.uni-wuerzburg.de/moodle/course/view.php?id=32329
 * Add in that you can enter a course link and password to sign up for this course to auto sign up course,download and leave course again
 * Method to quickly download everything from all courses of your logged in user
