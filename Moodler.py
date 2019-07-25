@@ -4,6 +4,7 @@ from time import sleep as wait_request
 import os
 from configparser import ConfigParser, NoOptionError, NoSectionError
 from zipfile import ZipFile 
+import re
 
 import unicodedata
 import string
@@ -50,10 +51,17 @@ class Moodler():
         self.download_wait_time = 0.6
 
         #TODO add other file icons for other types next to pdf/excel/jpeg
-        self.file_thumbnail_links = [
-            "https://wuecampus2.uni-wuerzburg.de/moodle/theme/image.php/fordson/core/1562689635/f/pdf",
-            "https://wuecampus2.uni-wuerzburg.de/moodle/theme/image.php/fordson/core/1562689635/f/spreadsheet",
-            "https://wuecampus2.uni-wuerzburg.de/moodle/theme/image.php/fordson/core/1562689635/f/jpeg"
+        # some examples for links but now only use ending and compare
+        # self.file_thumbnail_links = [
+        #     "https://wuecampus2.uni-wuerzburg.de/moodle/theme/image.php/fordson/core/1562689635/f/pdf",
+        #     "https://wuecampus2.uni-wuerzburg.de/moodle/theme/image.php/fordson/core/1562689635/f/spreadsheet",
+        #     "https://wuecampus2.uni-wuerzburg.de/moodle/theme/image.php/fordson/core/1562689635/f/jpeg",
+        #     "https://wuecampus2.uni-wuerzburg.de/moodle/theme/image.php/fordson/core/1563800556/f/pdf"
+        # ]
+        self.file_thumbnail_endings = [
+            "pdf",
+            "spreadsheet",
+            "jpeg"
         ]
 
         #get login credentials from config and then login into moodle
@@ -239,7 +247,7 @@ class Moodler():
         print(dir_path+zip_file_name+'.zip file was created successfully!')
 
 
-    def rip_course(self, url, directory="files/"):
+    def rip_course_r(self, url, directory="files/"):
         if not directory.endswith("/"):
             directory += "/"
 
@@ -250,11 +258,13 @@ class Moodler():
         #recursively call itself with urls of all sub categories if there are any like stat2 tutorium course
         for link_element in course_soup.find_all('a', class_="section-go-link"):
             section_url = link_element["href"]
-            self.rip_course(section_url, directory)
-        
+            print("Now getting section with url:")
+            print(section_url)
+            self.rip_course_r(section_url, directory)
 
-        for file_type_link in self.file_thumbnail_links:
-            all_file_icon_elements = course_soup.find_all('img', {'src': file_type_link})
+        for file_type_ending in self.file_thumbnail_endings:
+            #thanks to https://stackoverflow.com/a/45365599/7692491
+            all_file_icon_elements = course_soup.find_all('img', {'src': re.compile(r".*"+file_type_ending)})
 
             #loops through thubmnail file link images, gets parent and name+url out of this element
             file_links = []
@@ -305,8 +315,10 @@ class Moodler():
                 #not get banned time sleep
                 wait_request(self.download_wait_time)
 
+
+    def rip_course(self, url, directory="files/"):
+        self.rip_course_r(url,directory)
         self.__zip_dir(directory,"archive")
         print("Course was downloaded!")
-
     # def __del__(self):
     #     self.__logout()

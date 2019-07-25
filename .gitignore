@@ -6,3 +6,4 @@ auth.ini
 *.ini
 debugging/
 __pycache__/
+*.pyc
