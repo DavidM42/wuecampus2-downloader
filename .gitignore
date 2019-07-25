@@ -1,9 +1,21 @@
+#general things
 .pyc
 venv/
 .vscode/
 downloads/
+
+#ini files with auth info
 auth.ini
 *.ini
+
+#debugging things
 debugging/
+
+#python caching
 __pycache__/
 *.pyc
+
+#building binaries
+*.spec
+dist/
+build/
