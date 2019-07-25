@@ -4,7 +4,8 @@ from time import sleep as wait_request
 import os
 from configparser import ConfigParser, NoOptionError, NoSectionError
 from zipfile import ZipFile 
-import re
+from re import compile as re_compile
+from random import uniform
 
 import unicodedata
 import string
@@ -48,7 +49,7 @@ class Moodler():
 
         #can change to download faster/slower
         #used to not get account blocked/terminated
-        self.download_wait_time = 0.6
+        self.download_wait_time = 0.4
 
         #TODO add other file icons for other types next to pdf/excel/jpeg
         # some examples for links but now only use ending and compare
@@ -264,7 +265,7 @@ class Moodler():
 
         for file_type_ending in self.file_thumbnail_endings:
             #thanks to https://stackoverflow.com/a/45365599/7692491
-            all_file_icon_elements = course_soup.find_all('img', {'src': re.compile(r".*"+file_type_ending)})
+            all_file_icon_elements = course_soup.find_all('img', {'src': re_compile(r".*"+file_type_ending)})
 
             #loops through thubmnail file link images, gets parent and name+url out of this element
             file_links = []
@@ -313,7 +314,8 @@ class Moodler():
 
                 self.__download_file(wue_file.url, tmp_path ,wue_file.name)
                 #not get banned time sleep
-                wait_request(self.download_wait_time)
+                variated_wait_time = uniform(self.download_wait_time-0.25, self.download_wait_time+0.25)
+                wait_request(variated_wait_time)
 
 
     def rip_course(self, url, directory="files/"):
