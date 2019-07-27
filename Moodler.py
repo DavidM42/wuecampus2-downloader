@@ -5,6 +5,7 @@ import os
 from configparser import ConfigParser, NoOptionError, NoSectionError
 from zipfile import ZipFile 
 from re import compile as re_compile
+from re import search as re_search
 from random import uniform
 
 import unicodedata
@@ -23,7 +24,7 @@ def clean_filename(filename, whitelist=valid_filename_chars, replace=' '):
     # replace spaces
     for r in replace:
         filename = filename.replace(r,'_')
-
+    
     #replace german umlauts for very safe file_names on all platforms
     cleaned_filename = filename.replace("ä","ae").replace("Ä","Äe").replace("ö","oe").replace("Ö","oe")
 
@@ -69,7 +70,8 @@ class Moodler():
         self.file_thumbnail_endings = [
             "pdf",
             "spreadsheet",
-            "jpeg"
+            "jpeg",
+            "wuecasting"
         ]
 
         #if cookie gets inputed set it and keep instead of logging in via auth data
@@ -113,6 +115,7 @@ class Moodler():
         return content
 
     def __login(self):
+        print("Loggin in via credentials...")
         login_soup = BeautifulSoup(self.__get_cookies_content(), "html.parser")
         try:
             logintoken = login_soup.find('input', {'name': 'logintoken'}).get('value')
@@ -190,24 +193,60 @@ class Moodler():
 
         #cope with this a href link file workaround style thing https://wuecampus2.uni-wuerzburg.de/moodle/mod/resource/view.php?id=1120681 so have to parse again and follow
         if "view.php" in file_r.url:
-            redirect_link_soup = BeautifulSoup(file_r.content, "html.parser")
+            #TODO remove debugging print
+            print("Redirect url:")
+            print(file_r.url)
+            more_ref_soup = BeautifulSoup(file_r.content, "html.parser")
             try:
                 #Try to get another redirect in text on site
-                parent_elem = redirect_link_soup.find('div', {'class': 'resourceworkaround'})
+                parent_elem = more_ref_soup.find('div', {'class': 'resourceworkaround'})
                 href = parent_elem.find("a")["href"]
                 file_r = requests.get(href, cookies=self.cookies, allow_redirects=True)
-            except AttributeError as e:
+            except (AttributeError,TypeError) as e:
                 try:
                     #Try to get embededd image on page
-                    img_elem = redirect_link_soup.find('img', {'class': 'resourceimage'})
+                    img_elem = more_ref_soup.find('img', {'class': 'resourceimage'})
+                    #img_elem is NoneType if no image there which is catched via TypeError to try wuecasting and so on 
                     file_r = requests.get(img_elem["src"], cookies=self.cookies, allow_redirects=True)
-                except AttributeError as e:                    
-                    print(e)
-                    print("getting file "+ path + " failed")
-                    return None
-        
-        print("Downloaded file: " + filename)
+                except (AttributeError,TypeError) as e:                    
+                    try:
+                        #Try to get wuecasting video link
+                        #videos are enclosed in iframes so have to get this first
+                        iframexx = more_ref_soup.find_all('iframe')
+                        video_url = None
+                        for iframe in iframexx:
+                            #fake having a new chrome for video playback to be enabled maybe
+                            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36'}
+                            iframe_r = requests.get(iframe.attrs['src'], cookies=self.cookies,allow_redirects=True,headers=headers)
+                            iframe_soup = BeautifulSoup(iframe_r.content, "html.parser")
+                            
+                            reg = r".*flowplayer.*"
+                            video_player_div = iframe_soup.find_all('div', {'class': re_compile(reg)})
+                            
+                            if video_player_div is not None:
+                                mp4_url_regex = r"https:[/][/]video[.]uni-wuerzburg[.]de[/].*[.]mp4"
 
+                                scripts_content = more_ref_soup.find_all('script')
+                                for script in scripts_content:
+                                    print(script.text)
+                                    url_match = re_search(mp4_url_regex,script.text)
+                                    if url_match is not None:
+                                        video_url = url_match.group()
+                                        print(video_url)
+                                        quit()
+
+                                    # print(script.text)
+                        print(video_url)
+                        if video_url is None:
+                            raise Exception("No link found for wuecast video or any other other references for content")
+
+                            # file_r.content = 
+                    except (AttributeError,Exception) as e:                   
+                        #None of the possible linsk or workarounds found
+                        print(e)
+                        print("getting file "+ path + " failed")
+                        return None
+        
         #final redirect to resource contains file extension in path so get that now if unknown previously
         if find_extension:
             final_url = file_r.url
@@ -224,6 +263,7 @@ class Moodler():
             print(e)
             #TODO error catching for incorect file names and so on
 
+        print("Downloaded file: " + filename)
 
     def __zip_dir(self,course_path, zip_file_name):
         #append path to classwide base path
