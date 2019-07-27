@@ -10,6 +10,10 @@ from random import uniform
 import unicodedata
 import string
 
+from sys import version_info
+if version_info[0] < 3:
+    raise Exception("Must be using Python 3")
+
 valid_filename_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
 char_limit = 255
 
@@ -19,7 +23,10 @@ def clean_filename(filename, whitelist=valid_filename_chars, replace=' '):
     # replace spaces
     for r in replace:
         filename = filename.replace(r,'_')
-    
+
+    #replace german umlauts for very safe file_names on all platforms
+    cleaned_filename = filename.replace("ä","ae").replace("Ä","Äe").replace("ö","oe").replace("Ö","oe")
+
     # keep only valid ascii chars
     cleaned_filename = unicodedata.normalize('NFKD', filename).encode('ASCII', 'ignore').decode()
     

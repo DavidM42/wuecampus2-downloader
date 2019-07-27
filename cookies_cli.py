@@ -19,7 +19,7 @@ if __name__ == "__main__":
         cookie = sys.argv[2]
         url = sys.argv[3]
 
-        m = Moodler()
+        m = Moodler(cookie)
         m.rip_course(url, folder+"/")
     else:
         print("Not enough arguments; use like:")
